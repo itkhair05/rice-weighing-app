@@ -1,0 +1,37 @@
+name: can_lua_gia_dinh
+description: Ứng dụng Cân Lúa Gia Đình - quản lý lúa, cân nặng, giá bán offline-first.
+publish_to: 'none'
+version: 0.1.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+  riverpod: ^2.5.1
+  flutter_riverpod: ^2.5.1
+  sqflite: ^2.3.3+1
+  path_provider: ^2.1.4
+  path: ^1.9.0
+  freezed_annotation: ^2.4.1
+  json_annotation: ^4.9.0
+  pdf: ^3.13.1
+  printing: ^5.15.1
+  share_plus: ^13.3.0
+  file_picker: ^13.1.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+  build_runner: ^2.4.11
+  freezed: ^2.5.2
+  json_serializable: ^6.8.0
+  sqflite_common_ffi: ^2.4.3
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/fonts/
