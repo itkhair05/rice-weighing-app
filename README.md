@@ -10,8 +10,6 @@ Bạn có thể tải và trải nghiệm phiên bản APK trực tiếp trên t
 
 <div align="center">
 
-### Cân Lúa Gia Đình 🌾
-
 **Quét mã QR để tải APK**
 
 <img src="assets/images/qr-download.png" alt="QR tải ứng dụng Cân Lúa Gia Đình" width="220">
