@@ -6,6 +6,7 @@ import '../core/format.dart';
 import '../models/weighing.dart';
 import '../providers/app_providers.dart';
 import '../widgets/common.dart';
+import '../widgets/owner_prompt.dart';
 import 'export_buttons.dart';
 import 'payment_screen.dart';
 import 'weighing_screen.dart';
@@ -49,6 +50,34 @@ class _SessionDetailScreenState extends ConsumerState<SessionDetailScreen> {
     ref.invalidate(todayStatsProvider);
     ref.invalidate(monthStatsProvider);
     if (mounted) Navigator.pop(context);
+  }
+
+  Future<void> _editOwnerInfo(WeighingSession s) async {
+    final result = await promptOwnerName(
+      context,
+      ref,
+      initialOwner: s.owner,
+      initialVariety: s.riceVariety,
+    );
+    if (result == null) return;
+
+    final repo = ref.read(appRepositoryProvider);
+    final updated = WeighingSession(
+      id: s.id,
+      date: s.date,
+      bagsPerSet: s.bagsPerSet,
+      deductPerBag: s.deductPerBag,
+      deductTotalKg: s.deductTotalKg,
+      pricePerKg: s.pricePerKg,
+      deposit: s.deposit,
+      owner: result.owner,
+      riceVariety: result.riceVariety,
+      note: s.note,
+      sets: s.sets,
+    );
+    await repo.updateSession(updated);
+    setState(_reload);
+    ref.invalidate(sessionsProvider);
   }
 
   @override
@@ -103,11 +132,36 @@ class _SessionDetailScreenState extends ConsumerState<SessionDetailScreen> {
           return ListView(
             padding: const EdgeInsets.all(Spacing.l),
             children: [
-              Text(
-                'Ngày ${fmtDate(s.date)}'
-                '${s.owner.isEmpty ? '' : ' - ${s.owner}'}',
-                style: const TextStyle(
-                    fontSize: 22, fontWeight: FontWeight.bold),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Ngày ${fmtDate(s.date)}'
+                          '${s.owner.isEmpty ? '' : ' - ${s.owner}'}',
+                          style: const TextStyle(
+                              fontSize: 22, fontWeight: FontWeight.bold),
+                        ),
+                        if (s.riceVariety.isNotEmpty)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 4.0),
+                            child: Text(
+                              'Giống lúa: ${s.riceVariety}',
+                              style: const TextStyle(fontSize: 18),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.edit_square),
+                    tooltip: 'Sửa thông tin',
+                    onPressed: () => _editOwnerInfo(s),
+                  ),
+                ],
               ),
               if (s.note.isNotEmpty)
                 Padding(
@@ -140,20 +194,32 @@ class _SessionDetailScreenState extends ConsumerState<SessionDetailScreen> {
                               '${fmtKg(s.deductPerBag)} kg × ${s.totalBags} bao = ${kg(s.totalDeductKg)}')
                         else
                           const KeyValueRow('Trừ bao', 'Không trừ'),
-                        KeyValueRow('Giá',
-                            '${fmtMoney(s.pricePerKg.round())} đ/kg'),
+                        KeyValueRow(
+                            'Giá', '${fmtMoney(s.pricePerKg.round())} đ/kg'),
                         const Divider(),
                         const SizedBox(height: Spacing.xs),
                         AmountText(
                           fmtKg(s.totalRealKg),
                           unit: 'kg',
-                          label: 'THỰC NHẬN',
+                          label: 'THỰC NHẬN (TỔNG CÂN - TRỪ BAO)',
+                        ),
+                        const SizedBox(height: Spacing.m),
+                        const Text('TỔNG TIỀN (CHƯA TRỪ CỌC)',
+                            style: AppTheme.label),
+                        const SizedBox(height: Spacing.xs),
+                        Text(
+                          '${fmtMoney(s.totalMoney)} đ',
+                          style: TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.grey.shade700,
+                          ),
                         ),
                         const SizedBox(height: Spacing.m),
                         AmountText(
-                          fmtMoney(s.totalMoney),
+                          fmtMoney(s.finalMoney),
                           unit: 'đ',
-                          label: 'THÀNH TIỀN',
+                          label: 'TỔNG TIỀN (THỰC NHẬN)',
                           color: Theme.of(context).colorScheme.primary,
                         ),
                       ] else ...[
@@ -215,8 +281,7 @@ class _SetDetailCard extends StatelessWidget {
           children: [
             Text(
               'Set ${index + 1} — ${set.bags.length} bao — ${kg(set.totalKg)}',
-              style: const TextStyle(
-                  fontSize: 17, fontWeight: FontWeight.bold),
+              style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: Spacing.xs),
             Wrap(

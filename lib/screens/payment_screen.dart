@@ -28,6 +28,7 @@ class PaymentScreen extends ConsumerStatefulWidget {
 class _PaymentScreenState extends ConsumerState<PaymentScreen> {
   final _deductController = TextEditingController();
   final _priceController = TextEditingController();
+  final _depositController = TextEditingController();
   WeighingSession? _session;
   _DeductMode _mode = _DeductMode.none;
   bool _loaded = false;
@@ -63,6 +64,7 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
       }
     }
     _priceController.text = session.isPaid ? fmtKg(session.pricePerKg) : '';
+    _depositController.text = session.deposit > 0 ? fmtKg(session.deposit) : '';
     setState(() => _loaded = true);
   }
 
@@ -70,6 +72,8 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
       double.tryParse(_deductController.text.replaceAll(',', '.')) ?? 0;
   double get _price =>
       double.tryParse(_priceController.text.replaceAll(',', '.')) ?? 0;
+  double get _deposit =>
+      double.tryParse(_depositController.text.replaceAll(',', '.')) ?? 0;
 
   double get _totalDeduct {
     final s = _session!;
@@ -103,6 +107,7 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
         deductPerBag: perBag,
         deductTotalKg: totalDeduct,
         pricePerKg: _price,
+        deposit: _deposit,
       );
       await repo.setSetting(
           'deduct_per_bag', _mode == _DeductMode.perBag ? fmtKg(perBag) : '0');
@@ -140,6 +145,7 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
   void dispose() {
     _deductController.dispose();
     _priceController.dispose();
+    _depositController.dispose();
     super.dispose();
   }
 
@@ -156,6 +162,7 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
     }
     final realKg = s.totalKg - _totalDeduct;
     final money = (realKg * _price).round();
+    final finalMoney = money - _deposit.round();
     final cs = Theme.of(context).colorScheme;
 
     return Scaffold(
@@ -169,8 +176,7 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  if (s.owner.isNotEmpty)
-                    KeyValueRow('Chủ ruộng', s.owner),
+                  if (s.owner.isNotEmpty) KeyValueRow('Chủ ruộng', s.owner),
                   KeyValueRow('Tổng cân',
                       '${s.totalBags} bao • ${fmtKg(s.totalKg)} kg'),
                   if (s.note.isNotEmpty)
@@ -233,6 +239,13 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
               ],
             ),
           ),
+          const SizedBox(height: Spacing.l),
+          _PayField(
+            controller: _depositController,
+            label: 'Tiền cọc (đã nhận)',
+            suffix: 'đ',
+            onChanged: () => setState(() {}),
+          ),
           const SizedBox(height: Spacing.xl),
           Card(
             color: cs.primary.withValues(alpha: 0.08),
@@ -247,10 +260,21 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
                   KeyValueRow('Đơn giá', '${fmtMoney(_price.round())} đ/kg'),
                   const Divider(height: Spacing.xl),
                   const SizedBox(height: Spacing.s),
-                  const Text('THÀNH TIỀN', style: AppTheme.label),
+                  const Text('TỔNG TIỀN (CHƯA TRỪ CỌC)', style: AppTheme.label),
                   const SizedBox(height: Spacing.xs),
                   Text(
                     '${fmtMoney(money)} đ',
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.grey.shade700,
+                    ),
+                  ),
+                  const SizedBox(height: Spacing.m),
+                  const Text('TIỀN CÒN LẠI', style: AppTheme.label),
+                  const SizedBox(height: Spacing.xs),
+                  Text(
+                    '${fmtMoney(finalMoney)} đ',
                     style: TextStyle(
                       fontSize: 42,
                       fontWeight: FontWeight.bold,
@@ -270,7 +294,6 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
               Spacing.l, Spacing.m, Spacing.l, Spacing.l),
           child: SizedBox(
             width: double.infinity,
-            height: 52,
             child: FilledButton.icon(
               onPressed: _saving ? null : _save,
               icon: _saving

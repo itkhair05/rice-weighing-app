@@ -27,7 +27,8 @@ final defaultsProvider = FutureProvider<Map<String, String>>((ref) async {
   final repo = ref.read(appRepositoryProvider);
   return {
     'bags_per_set': await repo.getSetting('bags_per_set', defaultValue: '5'),
-    'deduct_per_bag': await repo.getSetting('deduct_per_bag', defaultValue: '0'),
+    'deduct_per_bag':
+        await repo.getSetting('deduct_per_bag', defaultValue: '0'),
     'price_per_kg': await repo.getSetting('price_per_kg', defaultValue: ''),
   };
 });

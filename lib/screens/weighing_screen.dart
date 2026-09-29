@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -11,10 +13,12 @@ import 'payment_screen.dart';
 import 'session_detail_screen.dart';
 
 class WeighingScreen extends ConsumerStatefulWidget {
-  const WeighingScreen({super.key, this.session, this.owner = ''});
+  const WeighingScreen(
+      {super.key, this.session, this.owner = '', this.riceVariety = ''});
 
   final WeighingSession? session;
   final String owner;
+  final String riceVariety;
 
   @override
   ConsumerState<WeighingScreen> createState() => _WeighingScreenState();
@@ -35,8 +39,11 @@ class _WeighingScreenState extends ConsumerState<WeighingScreen> {
   void initState() {
     super.initState();
     _owner = widget.session?.owner ?? widget.owner;
+    _riceVariety = widget.session?.riceVariety ?? widget.riceVariety;
     _initFromSessionOrDefaults();
   }
+
+  late String _riceVariety;
 
   Future<void> _initFromSessionOrDefaults() async {
     final session = widget.session;
@@ -130,14 +137,17 @@ class _WeighingScreenState extends ConsumerState<WeighingScreen> {
       _controllers[setIndex][bagIndex].selection = TextSelection.collapsed(
         offset: formatted.length,
       );
-      if (bagIndex + 1 < _controllers[setIndex].length) {
-        _focus[setIndex][bagIndex + 1].requestFocus();
-      } else if (setIndex + 1 < _controllers.length &&
-          _controllers[setIndex + 1].isNotEmpty) {
-        _focus[setIndex + 1][0].requestFocus();
-      }
     }
     _recomputeTotals();
+  }
+
+  void _jumpNext(int setIndex, int bagIndex) {
+    if (bagIndex + 1 < _controllers[setIndex].length) {
+      _focus[setIndex][bagIndex + 1].requestFocus();
+    } else if (setIndex + 1 < _controllers.length &&
+        _controllers[setIndex + 1].isNotEmpty) {
+      _focus[setIndex + 1][0].requestFocus();
+    }
   }
 
   /// "452" -> "45.2". Trả về null nếu không cần sửa.
@@ -170,6 +180,8 @@ class _WeighingScreenState extends ConsumerState<WeighingScreen> {
       deductTotalKg: widget.session?.deductTotalKg ?? 0,
       pricePerKg: widget.session?.pricePerKg ?? 0,
       owner: _owner.trim(),
+      riceVariety: _riceVariety.trim(),
+      deposit: widget.session?.deposit ?? 0,
       note: _noteController.text.trim(),
       sets: sets,
     );
@@ -201,8 +213,7 @@ class _WeighingScreenState extends ConsumerState<WeighingScreen> {
         if (text.isNotEmpty &&
             double.tryParse(text.replaceAll(',', '.')) == null) {
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content:
-                Text('Set ${i + 1}, bao ${j + 1}: "$text" không phải số'),
+            content: Text('Set ${i + 1}, bao ${j + 1}: "$text" không phải số'),
           ));
           return;
         }
@@ -220,6 +231,7 @@ class _WeighingScreenState extends ConsumerState<WeighingScreen> {
       final id = await repo.addSession(session);
       await repo.setSetting('bags_per_set', '$_defaultBagsPerSet');
       await repo.setSetting('last_owner', _owner.trim());
+      await repo.setSetting('last_variety', _riceVariety.trim());
       ref.invalidate(sessionsProvider);
       ref.invalidate(todayStatsProvider);
       ref.invalidate(monthStatsProvider);
@@ -297,7 +309,7 @@ class _WeighingScreenState extends ConsumerState<WeighingScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.session == null
-            ? 'Cân lúa — $_owner'
+            ? 'Cân lúa — $_owner${_riceVariety.isNotEmpty ? ' ($_riceVariety)' : ''}'
             : 'Sửa lần cân'),
       ),
       body: ListView(
@@ -314,6 +326,7 @@ class _WeighingScreenState extends ConsumerState<WeighingScreen> {
               onAddBag: () => _addBag(i),
               onRemoveBag: (bagIndex) => _removeBag(i, bagIndex),
               onChanged: (bagIndex, text) => _onBagChanged(i, bagIndex, text),
+              onNext: (bagIndex) => _jumpNext(i, bagIndex),
             ),
           Padding(
             padding: const EdgeInsets.only(top: Spacing.s),
@@ -336,7 +349,7 @@ class _WeighingScreenState extends ConsumerState<WeighingScreen> {
             Padding(
               padding: const EdgeInsets.only(top: Spacing.s, left: Spacing.xs),
               child: Text(
-                'Gõ 3 số sẽ tự thành số lẻ (452 → 45.2) và nhảy sang bao kế tiếp.',
+                'Nhấn phím Hoàn Tất (Enter) trên bàn phím để chuyển sang bao tiếp theo.\nNhập liền 3 số (452 → 45.2) để tự động thêm dấu phẩy.',
                 style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
               ),
             ),
@@ -347,8 +360,7 @@ class _WeighingScreenState extends ConsumerState<WeighingScreen> {
         child: Container(
           decoration: BoxDecoration(
             color: Colors.white,
-            border:
-                Border(top: BorderSide(color: Colors.grey.shade300)),
+            border: Border(top: BorderSide(color: Colors.grey.shade300)),
           ),
           padding: const EdgeInsets.fromLTRB(
               Spacing.l, Spacing.m, Spacing.l, Spacing.l),
@@ -373,15 +385,13 @@ class _WeighingScreenState extends ConsumerState<WeighingScreen> {
               const SizedBox(height: Spacing.m),
               SizedBox(
                 width: double.infinity,
-                height: 52,
                 child: FilledButton.icon(
                   onPressed: _saving ? null : _save,
                   icon: _saving
                       ? const SizedBox(
                           width: 24,
                           height: 24,
-                          child:
-                              CircularProgressIndicator(strokeWidth: 2))
+                          child: CircularProgressIndicator(strokeWidth: 2))
                       : const Icon(Icons.save, size: 28),
                   label: Text(_saving ? 'Đang lưu...' : 'Lưu lần cân',
                       style: const TextStyle(fontSize: 18)),
@@ -404,6 +414,7 @@ class _SetCard extends StatelessWidget {
   final VoidCallback onAddBag;
   final ValueChanged<int> onRemoveBag;
   final void Function(int bagIndex, String text) onChanged;
+  final void Function(int bagIndex) onNext;
 
   const _SetCard({
     super.key,
@@ -415,6 +426,7 @@ class _SetCard extends StatelessWidget {
     required this.onAddBag,
     required this.onRemoveBag,
     required this.onChanged,
+    required this.onNext,
   });
 
   @override
@@ -456,8 +468,10 @@ class _SetCard extends StatelessWidget {
                 bagNumber: i + 1,
                 controller: controllers[i],
                 focusNode: focus[i],
+                isLast: i == controllers.length - 1,
                 onRemove: controllers.length > 1 ? () => onRemoveBag(i) : null,
                 onChanged: (text) => onChanged(i, text),
+                onSubmitted: (_) => onNext(i),
               ),
             const SizedBox(height: Spacing.xs),
             Row(
@@ -490,15 +504,19 @@ class _BagField extends StatelessWidget {
   final int bagNumber;
   final TextEditingController controller;
   final FocusNode focusNode;
+  final bool isLast;
   final VoidCallback? onRemove;
   final ValueChanged<String> onChanged;
+  final ValueChanged<String> onSubmitted;
 
   const _BagField({
     required this.bagNumber,
     required this.controller,
     required this.focusNode,
+    this.isLast = false,
     required this.onRemove,
     required this.onChanged,
+    required this.onSubmitted,
   });
 
   @override
@@ -516,15 +534,16 @@ class _BagField extends StatelessWidget {
               controller: controller,
               focusNode: focusNode,
               keyboardType: TextInputType.number,
+              textInputAction: isLast ? TextInputAction.done : TextInputAction.next,
               inputFormatters: [_DecimalFormatter()],
-              style: const TextStyle(
-                  fontSize: 22, fontWeight: FontWeight.w600),
+              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w600),
               scrollPadding: const EdgeInsets.all(Spacing.xxl),
               decoration: const InputDecoration(
                 hintText: '0',
                 suffixText: 'kg',
               ),
               onChanged: onChanged,
+              onSubmitted: onSubmitted,
             ),
           ),
           SizedBox(
