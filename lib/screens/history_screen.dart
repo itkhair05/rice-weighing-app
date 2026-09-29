@@ -79,11 +79,16 @@ class HistoryScreen extends ConsumerWidget {
   }
 
   Future<void> _startWeighing(BuildContext context, WidgetRef ref) async {
-    final name = await promptOwnerName(context, ref);
-    if (name == null || !context.mounted) return;
+    final result = await promptOwnerName(context, ref);
+    if (result == null || !context.mounted) return;
     await Navigator.push(
       context,
-      MaterialPageRoute(builder: (_) => WeighingScreen(owner: name)),
+      MaterialPageRoute(
+        builder: (_) => WeighingScreen(
+          owner: result.owner,
+          riceVariety: result.riceVariety,
+        ),
+      ),
     );
     ref.invalidate(sessionsProvider);
   }
@@ -113,9 +118,8 @@ class _SessionCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final s = session;
-    final title = s.owner.isEmpty
-        ? fmtDate(s.date)
-        : '${fmtDate(s.date)} - ${s.owner}';
+    final title =
+        s.owner.isEmpty ? fmtDate(s.date) : '${fmtDate(s.date)} - ${s.owner}';
     return Card(
       margin: const EdgeInsets.only(bottom: Spacing.s),
       child: InkWell(
@@ -130,7 +134,8 @@ class _SessionCard extends ConsumerWidget {
           ref.invalidate(sessionsProvider);
         },
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(Spacing.l, Spacing.m, Spacing.s, Spacing.m),
+          padding: const EdgeInsets.fromLTRB(
+              Spacing.l, Spacing.m, Spacing.s, Spacing.m),
           child: Row(
             children: [
               Expanded(
@@ -142,35 +147,29 @@ class _SessionCard extends ConsumerWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
-                          fontSize: 17, fontWeight: FontWeight.w600),
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF333333)),
                     ),
                     const SizedBox(height: Spacing.xs),
                     Text(
-                      '${s.totalBags} bao • ${fmtKg(s.totalKg)} kg',
-                      style: const TextStyle(fontSize: 14),
+                      '${s.totalBags} bao • ${fmtKg(s.totalRealKg)} kg',
+                      style: const TextStyle(
+                          fontSize: 16, color: Color(0xFF666666)),
                     ),
-                    const SizedBox(height: Spacing.s),
+                    const SizedBox(height: Spacing.m),
                     Row(
                       children: [
                         PayBadge(paid: s.isPaid),
                         const SizedBox(width: Spacing.s),
                         if (s.isPaid) ...[
-                          Flexible(
-                            child: Text(
-                              'Thực nhận ${fmtKg(s.totalRealKg)} kg',
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                  fontSize: 13, color: Colors.grey.shade600),
-                            ),
-                          ),
-                          const SizedBox(width: Spacing.s),
+                          const Spacer(),
                           Text(
-                            '${fmtMoney(s.totalMoney)} đ',
-                            style: TextStyle(
-                              fontSize: 16,
+                            '${fmtMoney(s.finalMoney)} đ',
+                            style: const TextStyle(
+                              fontSize: 18,
                               fontWeight: FontWeight.bold,
-                              color: Theme.of(context).colorScheme.primary,
+                              color: Color(0xFF2E7D32),
                             ),
                           ),
                         ],
@@ -202,16 +201,17 @@ class _DaySessionsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final totalBags = sessions.fold<int>(0, (sum, s) => sum + s.totalBags);
-    final totalKg = sessions.fold<double>(0, (sum, s) => sum + s.totalKg);
+    final totalKg = sessions.fold<double>(0, (sum, s) => sum + s.totalRealKg);
     final totalMoney =
-        sessions.fold<int>(0, (sum, s) => sum + (s.isPaid ? s.totalMoney : 0));
+        sessions.fold<int>(0, (sum, s) => sum + (s.isPaid ? s.finalMoney : 0));
     return Scaffold(
       appBar: AppBar(title: Text('Ngày ${fmtDate(date)}')),
       body: Column(
         children: [
           Card(
             margin: const EdgeInsets.all(Spacing.l),
-            color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.08),
+            color:
+                Theme.of(context).colorScheme.primary.withValues(alpha: 0.08),
             child: Padding(
               padding: const EdgeInsets.all(Spacing.l),
               child: Column(
@@ -240,8 +240,7 @@ class _DaySessionsScreen extends StatelessWidget {
                     title: 'Không có lần cân nào ngày này',
                   )
                 : ListView(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: Spacing.l),
+                    padding: const EdgeInsets.symmetric(horizontal: Spacing.l),
                     children: [
                       for (final s in sessions)
                         Card(
@@ -249,11 +248,11 @@ class _DaySessionsScreen extends StatelessWidget {
                           child: ListTile(
                             title: Text(
                               s.owner.isEmpty
-                                  ? '${s.totalBags} bao — ${fmtKg(s.totalKg)} kg'
-                                  : '${s.owner} — ${s.totalBags} bao • ${fmtKg(s.totalKg)} kg',
+                                  ? '${s.totalBags} bao — ${fmtKg(s.totalRealKg)} kg'
+                                  : '${s.owner} — ${s.totalBags} bao • ${fmtKg(s.totalRealKg)} kg',
                             ),
                             subtitle: Text(s.isPaid
-                                ? 'Đã tính tiền: ${fmtMoney(s.totalMoney)} đ'
+                                ? 'Đã tính tiền: ${fmtMoney(s.finalMoney)} đ'
                                 : 'Chưa tính tiền'),
                             trailing: const Icon(Icons.chevron_right),
                             onTap: () => Navigator.push(

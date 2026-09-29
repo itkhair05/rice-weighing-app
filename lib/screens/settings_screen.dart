@@ -120,9 +120,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   ? TextField(
                       controller: _bagsController,
                       keyboardType: TextInputType.number,
-                      inputFormatters: [
-                        FilteringTextInputFormatter.digitsOnly
-                      ],
+                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                       decoration: const InputDecoration(
                         labelText: 'Số bao mặc định mỗi set',
                         suffixText: 'bao',
@@ -141,8 +139,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             icon: Icons.table_view,
             label: 'Xuất toàn bộ CSV',
             onTap: () async {
-              final repo =
-                  ref.read(appRepositoryProvider);
+              final repo = ref.read(appRepositoryProvider);
               await ExportService.shareCsv(await repo.getSessions());
             },
           ),
@@ -151,8 +148,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             icon: Icons.picture_as_pdf,
             label: 'Xuất toàn bộ PDF',
             onTap: () async {
-              final repo =
-                  ref.read(appRepositoryProvider);
+              final repo = ref.read(appRepositoryProvider);
               await ExportService.sharePdf(await repo.getSessions());
             },
           ),
@@ -260,9 +256,7 @@ class _ActionCard extends StatelessWidget {
         leading: Icon(icon, size: 28, color: color),
         title: Text(label,
             style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-                color: color)),
+                fontSize: 18, fontWeight: FontWeight.w600, color: color)),
         trailing: const Icon(Icons.chevron_right),
         onTap: onTap,
       ),

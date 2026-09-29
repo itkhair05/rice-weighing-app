@@ -73,7 +73,11 @@ class _StatsCard extends StatelessWidget {
         padding: const EdgeInsets.all(Spacing.xl),
         child: Column(
           children: [
-            Text(title, style: Theme.of(context).textTheme.titleLarge),
+            Text(title,
+                style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF333333))),
             const SizedBox(height: Spacing.l),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,

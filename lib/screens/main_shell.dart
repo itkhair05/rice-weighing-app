@@ -7,6 +7,7 @@ import '../models/weighing.dart';
 import '../providers/app_providers.dart';
 import '../widgets/common.dart';
 import '../widgets/owner_prompt.dart';
+import 'calculator_screen.dart';
 import 'history_screen.dart';
 import 'settings_screen.dart';
 import 'session_detail_screen.dart';
@@ -23,6 +24,7 @@ class MainShell extends ConsumerStatefulWidget {
 class _MainShellState extends ConsumerState<MainShell> {
   static const _pages = <Widget>[
     _HomeTab(),
+    CalculatorScreen(),
     HistoryScreen(),
     SettingsScreen(),
   ];
@@ -51,6 +53,11 @@ class _MainShellState extends ConsumerState<MainShell> {
             icon: Icon(Icons.scale_outlined),
             selectedIcon: Icon(Icons.scale),
             label: 'Cân lúa',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.calculate_outlined),
+            selectedIcon: Icon(Icons.calculate),
+            label: 'Máy tính',
           ),
           NavigationDestination(
             icon: Icon(Icons.history_outlined),
@@ -108,17 +115,19 @@ class _HomeTab extends ConsumerWidget {
           const SizedBox(height: Spacing.l),
           FilledButton.icon(
             style: FilledButton.styleFrom(
-              backgroundColor: cs.primary,
-              minimumSize: const Size.fromHeight(64),
+              backgroundColor: const Color(0xFF2E7D32),
+              foregroundColor: Colors.white,
+              minimumSize: const Size.fromHeight(68),
+              elevation: 2,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(AppRadius.button),
+                borderRadius: BorderRadius.circular(20),
               ),
             ),
             onPressed: () => _openWeighing(context, ref),
-            icon: const Icon(Icons.scale, size: 34),
+            icon: const Icon(Icons.add_circle, size: 32),
             label: const Text(
-              'Bắt đầu cân',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              'Bắt đầu cân lúa',
+              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
             ),
           ),
           const SizedBox(height: Spacing.l),
@@ -148,17 +157,23 @@ class _HomeTab extends ConsumerWidget {
                       margin: const EdgeInsets.only(bottom: Spacing.s),
                       child: ListTile(
                         contentPadding: const EdgeInsets.symmetric(
-                            horizontal: Spacing.l, vertical: Spacing.xs),
+                            horizontal: Spacing.l, vertical: Spacing.s),
                         title: Text(
                           s.owner.isEmpty
                               ? fmtDate(s.date)
                               : '${fmtDate(s.date)} - ${s.owner}',
                           style: const TextStyle(
-                              fontSize: 18, fontWeight: FontWeight.w600),
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF333333)),
                         ),
-                        subtitle: Text(
-                          '${s.totalBags} bao • ${fmtKg(s.totalKg)} kg',
-                          style: const TextStyle(fontSize: 15),
+                        subtitle: Padding(
+                          padding: const EdgeInsets.only(top: 4.0),
+                          child: Text(
+                            '${s.totalBags} bao • ${fmtKg(s.totalRealKg)} kg',
+                            style: const TextStyle(
+                                fontSize: 16, color: Color(0xFF666666)),
+                          ),
                         ),
                         trailing: const Icon(Icons.chevron_right),
                         onTap: () => _openDetail(context, s.id),
@@ -166,7 +181,8 @@ class _HomeTab extends ConsumerWidget {
                     ),
                   if (sessions.length > 3)
                     TextButton(
-                      onPressed: () => ref.read(_tabIndexProvider.notifier).state = 1,
+                      onPressed: () =>
+                          ref.read(_tabIndexProvider.notifier).state = 2,
                       child: const Text('Xem tất cả trong Lịch sử'),
                     ),
                 ],
@@ -189,11 +205,16 @@ class _HomeTab extends ConsumerWidget {
 }
 
 Future<void> _openWeighing(BuildContext context, WidgetRef ref) async {
-  final name = await promptOwnerName(context, ref);
-  if (name == null || !context.mounted) return;
+  final result = await promptOwnerName(context, ref);
+  if (result == null || !context.mounted) return;
   await Navigator.push(
     context,
-    MaterialPageRoute(builder: (_) => WeighingScreen(owner: name)),
+    MaterialPageRoute(
+      builder: (_) => WeighingScreen(
+        owner: result.owner,
+        riceVariety: result.riceVariety,
+      ),
+    ),
   );
   ref.invalidate(sessionsProvider);
   ref.invalidate(todayStatsProvider);
@@ -209,9 +230,14 @@ class _TodayCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Card(
-      color: const Color(0xFFF9A825).withValues(alpha: 0.12),
+      elevation: 0,
+      color: const Color(0xFFFFF8E1), // Màu vàng rất nhẹ
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+        side: const BorderSide(color: Color(0xFFFFE082), width: 1.5),
+      ),
       child: Padding(
-        padding: const EdgeInsets.all(Spacing.l),
+        padding: const EdgeInsets.all(Spacing.xl),
         child: today.when(
           loading: () => const SizedBox(
             height: 64,
@@ -221,28 +247,51 @@ class _TodayCard extends ConsumerWidget {
               ErrorState(onRetry: () => ref.invalidate(todayStatsProvider)),
           data: (s) => Row(
             children: [
-              const Icon(Icons.wb_sunny,
-                  size: 40, color: Color(0xFFF9A825)),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: const BoxDecoration(
+                  color: Color(0xFFFFECB3),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.wb_sunny_rounded,
+                    size: 36, color: Color(0xFFF9A825)),
+              ),
               const SizedBox(width: Spacing.l),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Hôm nay', style: AppTheme.label),
+                    const Text('Hôm nay',
+                        style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFFF57F17))),
                     const SizedBox(height: Spacing.xs),
                     Text(
                       '${s.bags} bao • ${fmtKg(s.totalKg)} kg',
-                      style: AppTheme.numberL,
+                      style: const TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black87,
+                      ),
                     ),
                   ],
                 ),
               ),
-              IconButton(
-                tooltip: 'Thống kê',
-                icon: const Icon(Icons.chevron_right, size: 30),
-                onPressed: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const StatsScreen()),
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0xFFFFE082)),
+                ),
+                child: IconButton(
+                  tooltip: 'Thống kê',
+                  icon: const Icon(Icons.chevron_right,
+                      size: 28, color: Color(0xFFF9A825)),
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const StatsScreen()),
+                  ),
                 ),
               ),
             ],

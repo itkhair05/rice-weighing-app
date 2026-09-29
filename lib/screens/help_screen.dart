@@ -124,7 +124,8 @@ class _HelpSection extends StatelessWidget {
                     ),
                     const SizedBox(width: Spacing.s),
                     Expanded(
-                        child: Text(item, style: const TextStyle(fontSize: 15))),
+                        child:
+                            Text(item, style: const TextStyle(fontSize: 15))),
                   ],
                 ),
               ),
