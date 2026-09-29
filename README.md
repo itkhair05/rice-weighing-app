@@ -2,7 +2,6 @@
 
 Ứng dụng Flutter giúp ghi chép cân lúa theo bao **hoàn toàn offline** — dành cho hộ nông dân thu mua lúa nhỏ lẻ. Không cần internet, không tài khoản, dữ liệu lưu ngay trên máy.
 
-© 2026 **Thế Khải**. All rights reserved.
 
 ## Tính năng
 
@@ -47,6 +46,6 @@ Build APK release:
 flutter build apk --release
 ```
 
-## Giấy phép
+## Tác giả
 
-Dự án phục vụ mục đích học tập và sử dụng cá nhân. Vui lòng không sao chép dưới danh nghĩa khác mà không có sự cho phép của tác giả.
+Được xây dựng bởi [Dương Thế Khải](https://github.com/itkhair05).
