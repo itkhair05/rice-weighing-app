@@ -2,6 +2,27 @@
 
 Ứng dụng Flutter giúp ghi chép cân lúa theo bao **hoàn toàn offline** — dành cho hộ nông dân thu mua lúa nhỏ lẻ. Không cần internet, không tài khoản, dữ liệu lưu ngay trên máy.
 
+## Trải nghiệm ứng dụng
+
+Bạn có thể tải và trải nghiệm phiên bản APK trực tiếp trên thiết bị Android.
+
+> **Cách tải:** Quét mã QR bên dưới bằng điện thoại → mở liên kết Google Drive → tải file APK → cài đặt và trải nghiệm.
+
+<div align="center">
+
+### Cân Lúa Gia Đình 🌾
+
+**Quét mã QR để tải APK**
+
+<img src="assets/images/qr-download.png" alt="QR tải ứng dụng Cân Lúa Gia Đình" width="220">
+
+**[⬇️ Tải APK trực tiếp](https://drive.google.com/file/d/1-HTgL1tLJxPk__FR2z-aj0OJgCi5tyRH/view?usp=sharing)**
+
+</div>
+
+> 💡 **Lưu ý:** Đây là phiên bản trải nghiệm. Ứng dụng hiện hỗ trợ **Android** và hoạt động hoàn toàn offline sau khi cài đặt.
+
+
 
 ## Tính năng
 

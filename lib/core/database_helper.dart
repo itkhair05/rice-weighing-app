@@ -18,7 +18,7 @@ class DatabaseHelper {
     final path = p.join(databasesPath, 'can_lua_gia_dinh.db');
     final database = await openDatabase(
       path,
-      version: 5,
+      version: 6,
       onCreate: (db, version) async {
         await _createOldTables(db);
         await _createWeighingTables(db);
@@ -41,6 +41,14 @@ class DatabaseHelper {
           await db.execute(
             'ALTER TABLE weighing_sessions ADD COLUMN '
             'deduct_total REAL NOT NULL DEFAULT 0',
+          );
+        }
+        if (oldVersion < 6) {
+          await db.execute(
+            'ALTER TABLE weighing_sessions ADD COLUMN rice_variety TEXT',
+          );
+          await db.execute(
+            'ALTER TABLE weighing_sessions ADD COLUMN deposit REAL',
           );
         }
       },
@@ -89,6 +97,8 @@ class DatabaseHelper {
         deduct_total REAL NOT NULL DEFAULT 0,
         price_per_kg REAL,
         owner TEXT,
+        rice_variety TEXT,
+        deposit REAL,
         note TEXT
       )
     ''');
