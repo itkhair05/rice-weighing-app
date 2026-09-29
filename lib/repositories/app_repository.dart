@@ -12,7 +12,8 @@ final appRepositoryProvider = Provider<SqlAppRepository>((ref) {
 // ---------- Weighing sessions (Phase 2) ----------
 
 extension WeighingRepository on SqlAppRepository {
-  Future<List<WeighingSession>> getSessions({DateTime? from, DateTime? to}) async {
+  Future<List<WeighingSession>> getSessions(
+      {DateTime? from, DateTime? to}) async {
     final dbHelper = await DatabaseHelper.instance;
     final db = dbHelper.db;
     final result = await db.query(
@@ -71,6 +72,8 @@ extension WeighingRepository on SqlAppRepository {
         deductTotalKg: (row['deduct_total'] as num?)?.toDouble() ?? 0,
         pricePerKg: (row['price_per_kg'] as num?)?.toDouble() ?? 0,
         owner: (row['owner'] as String?) ?? '',
+        riceVariety: (row['rice_variety'] as String?) ?? '',
+        deposit: (row['deposit'] as num?)?.toDouble() ?? 0,
         note: (row['note'] as String?) ?? '',
         sets: setsBySession[sessionId] ?? const [],
       ));
@@ -109,8 +112,8 @@ extension WeighingRepository on SqlAppRepository {
       bagsBySet.putIfAbsent(b['set_id'] as int, () => []).add(Bag.fromMap(b));
     }
     final sets = setsResult
-        .map((s) => WeighingSet.fromMap(
-            s, bagsBySet[s['id'] as int] ?? const []))
+        .map((s) =>
+            WeighingSet.fromMap(s, bagsBySet[s['id'] as int] ?? const []))
         .toList();
     return WeighingSession(
       id: id,
@@ -120,6 +123,8 @@ extension WeighingRepository on SqlAppRepository {
       deductTotalKg: (row['deduct_total'] as num?)?.toDouble() ?? 0,
       pricePerKg: (row['price_per_kg'] as num?)?.toDouble() ?? 0,
       owner: (row['owner'] as String?) ?? '',
+      riceVariety: (row['rice_variety'] as String?) ?? '',
+      deposit: (row['deposit'] as num?)?.toDouble() ?? 0,
       note: (row['note'] as String?) ?? '',
       sets: sets,
     );
@@ -137,6 +142,8 @@ extension WeighingRepository on SqlAppRepository {
         'note': session.note,
         'price_per_kg': session.pricePerKg,
         'owner': session.owner,
+        'rice_variety': session.riceVariety,
+        'deposit': session.deposit,
       });
       for (final set in session.sets) {
         final setId = await txn.insert('weighing_sets', {
@@ -167,6 +174,8 @@ extension WeighingRepository on SqlAppRepository {
           'note': session.note,
           'price_per_kg': session.pricePerKg,
           'owner': session.owner,
+          'rice_variety': session.riceVariety,
+          'deposit': session.deposit,
         },
         where: 'id = ?',
         whereArgs: [session.id],
@@ -205,6 +214,7 @@ extension WeighingRepository on SqlAppRepository {
     required double deductPerBag,
     required double deductTotalKg,
     required double pricePerKg,
+    required double deposit,
   }) async {
     final dbHelper = await DatabaseHelper.instance;
     await dbHelper.db.update(
@@ -213,6 +223,7 @@ extension WeighingRepository on SqlAppRepository {
         'deduct_per_bag': deductPerBag,
         'deduct_total': deductTotalKg,
         'price_per_kg': pricePerKg,
+        'deposit': deposit,
       },
       where: 'id = ?',
       whereArgs: [sessionId],
@@ -248,8 +259,8 @@ extension WeighingRepository on SqlAppRepository {
     var money = 0;
     for (final s in sessions) {
       bags += s.totalBags;
-      totalKg += s.totalKg;
-      if (s.isPaid) money += s.totalMoney;
+      totalKg += s.totalRealKg;
+      if (s.isPaid) money += s.finalMoney;
     }
     return SessionStats(bags: bags, totalKg: totalKg, totalMoney: money);
   }

@@ -54,6 +54,8 @@ class WeighingSession {
   final double deductTotalKg;
   final double pricePerKg;
   final String owner;
+  final String riceVariety;
+  final double deposit;
   final String note;
   final List<WeighingSet> sets;
 
@@ -65,6 +67,8 @@ class WeighingSession {
     this.deductTotalKg = 0,
     this.pricePerKg = 0,
     this.owner = '',
+    this.riceVariety = '',
+    this.deposit = 0,
     required this.note,
     required this.sets,
   });
@@ -80,6 +84,8 @@ class WeighingSession {
   double get totalRealKg => totalKg - totalDeductKg;
 
   int get totalMoney => (totalRealKg * pricePerKg).round();
+  
+  int get finalMoney => totalMoney - deposit.round();
 }
 
 class SessionStats {
